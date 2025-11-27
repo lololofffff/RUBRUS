@@ -1,0 +1,160 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "RUBRUS",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "XD",
+   LoadingSubtitle = "by EROT",
+   ShowText = "Rayfield", -- for mobile users to unhide rayfield, change if you'd like
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   ToggleUIKeybind = "K", -- The keybind to toggle the UI visibility (string like "K" or Enum.KeyCode)
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+local Tab = Window:CreateTab("Player", 10747373176) -- Title, Image
+
+local Toggle = Tab:CreateToggle({
+    Name = "Anti Grab",
+    CurrentValue = false,
+    Flag = "AutoStruggle", 
+    Callback = function(enabled)
+        if enabled then
+            autoStruggleCoroutine = RunService.Heartbeat:Connect(function()
+                local character = localPlayer.Character
+                if character and character:FindFirstChild("Head") then
+                    local head = character.Head
+                    local partOwner = head:FindFirstChild("PartOwner")
+                    if partOwner then
+                        Struggle:FireServer()
+                        ReplicatedStorage.GameCorrectionEvents.StopAllVelocity:FireServer()
+                        for _, part in pairs(character:GetChildren()) do
+                            if part:IsA("BasePart") then
+                                part.Anchored = true
+                            end
+                        end
+                        while localPlayer.IsHeld.Value do
+                            wait()
+                        end
+                        for _, part in pairs(character:GetChildren()) do
+                            if part:IsA("BasePart") then
+                                part.Anchored = false
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if autoStruggleCoroutine then
+                autoStruggleCoroutine:Disconnect()
+                autoStruggleCoroutine = nil
+            end
+        end
+    end
+})
+
+
+local Toggle = Tab:CreateToggle({
+    Name = "Fire Grab",
+    CurrentValue = false,
+    Flag = "FireGrab", 
+    Callback = function(enabled)
+        if enabled then
+            fireGrabCoroutine = coroutine.create(fireGrab)
+            coroutine.resume(fireGrabCoroutine)
+        else
+            if fireGrabCoroutine then
+                coroutine.close(fireGrabCoroutine)
+                fireGrabCoroutine = nil
+            end
+        end
+    end
+})
+
+local Slider = Tab:CreateSlider({
+    Name = "Strength Power",
+    Range = {300, 100000},
+    Increment = 1,
+    Suffix = "",
+    CurrentValue = 300,
+    Flag = "StrengthSlider", 
+    Callback = function(Value)
+        _G.strength = Value
+    end,
+ })
+
+ local Toggle = Tab:CreateToggle({
+    Name = "Strength",
+    CurrentValue = false,
+    Flag = "StrengthToggle",
+    Callback = function(enabled)
+        if enabled then
+            strengthConnection = workspace.ChildAdded:Connect(function(model)
+                if model.Name == "GrabParts" then
+                    local partToImpulse = model.GrabPart.WeldConstraint.Part1
+                    if partToImpulse then
+                        local velocityObj = Instance.new("BodyVelocity", partToImpulse)
+                        model:GetPropertyChangedSignal("Parent"):Connect(function()
+                            if not model.Parent then
+                                if UserInputService:GetLastInputType() == Enum.UserInputType.MouseButton2 then
+                                    velocityObj.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                    velocityObj.Velocity = workspace.CurrentCamera.CFrame.LookVector * _G.strength
+                                    Debris:AddItem(velocityObj, 1)
+                                else
+                                    velocityObj:Destroy()
+                                end
+                            end
+                        end)
+                    end
+                end
+            end)
+        elseif strengthConnection then
+            strengthConnection:Disconnect()
+        end
+    end
+})
+
+local Toggle = Tab:CreateToggle({
+    Name = "Poison Grab",
+    CurrentValue = false,
+    Flag = "", 
+    Callback = function(enabled)
+        if enabled then
+            poisonGrabCoroutine = coroutine.create(function() grabHandler("poison") end)
+            coroutine.resume(poisonGrabCoroutine)
+        else
+            if poisonGrabCoroutine then
+                coroutine.close(poisonGrabCoroutine)
+                poisonGrabCoroutine = nil
+                for _, part in pairs(poisonHurtParts) do
+                    part.Position = Vector3.new(0, -200, 0)
+                end
+            end
+        end
+    end
+})
